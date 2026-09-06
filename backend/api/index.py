@@ -1,12 +1,15 @@
-import os
 import sys
+import os
 from pathlib import Path
 
-root_dir = Path(__file__).resolve().parent.parent
-app_dir = root_dir / "app"
+# Vercel runs this file from /var/task/api/index.py
+# The 'backend' directory (parent of 'api') must be on sys.path
+# so that `from app.xxx import yyy` works correctly.
+backend_dir = Path(__file__).resolve().parent.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
-for p in [str(root_dir), str(app_dir)]:
-    if p not in sys.path:
-        sys.path.insert(0, p)
+# Also change working directory to backend root
+os.chdir(str(backend_dir))
 
 from app.main import app
