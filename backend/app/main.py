@@ -32,9 +32,6 @@ app.include_router(api_v1_router)
 
 @app.get("/", tags=["Root"])
 async def root():
-    """
-    Root endpoint returning basic API status and links to documentation.
-    """
     return {
         "message": "AI Job Application Tracker API is running!",
         "docs": "/docs",
@@ -43,9 +40,6 @@ async def root():
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """
-    Public health check endpoint for Cloud Run, Vercel, and load balancers.
-    """
     return {
         "status": "healthy",
         "service": "ai-job-application-tracker-backend",
