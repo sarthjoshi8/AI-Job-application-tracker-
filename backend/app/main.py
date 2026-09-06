@@ -18,7 +18,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware for frontend on Firebase Hosting
+# CORS middleware for frontend on Firebase Hosting / Vercel
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -30,10 +30,21 @@ app.add_middleware(
 # Include API Router
 app.include_router(api_v1_router)
 
+@app.get("/", tags=["Root"])
+async def root():
+    """
+    Root endpoint returning basic API status and links to documentation.
+    """
+    return {
+        "message": "AI Job Application Tracker API is running!",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     """
-    Public health check endpoint for Cloud Run and load balancers.
+    Public health check endpoint for Cloud Run, Vercel, and load balancers.
     """
     return {
         "status": "healthy",
