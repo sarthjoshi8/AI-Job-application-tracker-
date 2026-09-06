@@ -1,0 +1,56 @@
+steps:
+  # 1. Build and push backend Docker container to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$COMMIT_SHA', './backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$COMMIT_SHA']
+
+  # 2. Deploy backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'job-tracker-backend'
+      - '--image'
+      - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$COMMIT_SHA'
+      - '--region'
+      - '${_LOCATION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_MODEL=gemini-2.5-flash,PUBSUB_NUDGE_TOPIC=nudge-events'
+
+  # 3. Deploy Cloud Function for Nudges
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'functions'
+      - 'deploy'
+      - 'sendNudge'
+      - '--gen2'
+      - '--runtime'
+      - 'python311'
+      - '--region'
+      - '${_LOCATION}'
+      - '--source'
+      - './backend/functions/send_nudge'
+      - '--entry-point'
+      - 'send_nudge'
+      - '--trigger-topic'
+      - 'nudge-events'
+      - '--set-env-vars'
+      - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
+
+substitutions:
+  _LOCATION: us-central1
+  _REPO: job-tracker
+
+images:
+  - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$COMMIT_SHA'
